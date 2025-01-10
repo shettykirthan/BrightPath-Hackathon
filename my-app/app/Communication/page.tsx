@@ -71,7 +71,7 @@ export default function VideoChat() {
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
-          a.download = `video-${Date.now()}.mp4`
+          a.download = `Video.mp4`
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)

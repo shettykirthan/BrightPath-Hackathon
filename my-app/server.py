@@ -10,6 +10,7 @@ import time
 import requests
 import io
 from huggingface_hub import InferenceClient
+import os
 
 
 app = Flask(__name__)
@@ -18,7 +19,7 @@ CORS(app)
 client = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="")
 
 genai.configure(api_key="")
-model = genai.GenerativeModel("gemini-1.5-pro")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.after_request
 def after_request(response):
@@ -161,11 +162,27 @@ def aiSuggestionBot():
     response = model.generate_content(f"Give a 4 brief suggestions for the parents on how to improve their childs Language Development, Physical Development, Cognitive Skills, communication skills in the form of: {text}")
     return jsonify({"response": response.text})
 
+def get_downloads_folder():
+    """Get the path to the Downloads folder."""
+    home = os.path.expanduser("~")
+    downloads_folder = os.path.join(home, "Downloads")
+    return downloads_folder
+
 @app.route("/VideoAnalyzer", methods=["GET"])
 def videoAnalyzer():
-    video_file_name = "public/Videos/Kirthan3.mp4"
+    downloads_path = get_downloads_folder()
+    file_name = "Video.mp4"
+    video_file_name = os.path.join(downloads_path, file_name)
 
-    print(f"Uploading file...")
+    print(f"Checking for file {file_name} in Downloads folder...")
+
+    # Loop until the file is available
+    while not os.path.exists(video_file_name):
+        print(f"Waiting for {file_name} to be available...")
+        time.sleep(5)
+
+    print(f"File {file_name} found. Uploading...")
+
     video_file = genai.upload_file(path=video_file_name)
     print(f"Completed upload: {video_file.uri}")
 
@@ -179,7 +196,9 @@ def videoAnalyzer():
     
     print(f'Video processing complete: ' + video_file.uri)
 
-    prompt = "Your a bot talking to a friend"
+    prompt = """
+    Pretend like your talking to the person in the video
+    """
 
     model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 
@@ -188,6 +207,7 @@ def videoAnalyzer():
 
     response = model.generate_content([prompt, video_file], request_options={"timeout": 600})
     print(response.text)
+    os.remove(video_file_name)
 
     return jsonify({"response": response.text})
 

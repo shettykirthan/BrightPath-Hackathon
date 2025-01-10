@@ -44,6 +44,8 @@ export default function QuizPage() {
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([]);
+  const [countdown, setCountdown] = useState(10); // Countdown state for the timer
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true); // State to disable the start button initially
 
   const searchParams = useSearchParams()
   const story = searchParams.get('story') // Retrieve 'story' from query params
@@ -54,6 +56,19 @@ export default function QuizPage() {
       fetchQuizQuestions(story);
     }
   }, [story]);
+
+  useEffect(() => {
+    // Countdown Timer logic
+    if (countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown(prev => prev - 1); // Decrease countdown every second
+      }, 1000);
+      
+      return () => clearInterval(timer); // Cleanup on component unmount or countdown reaching zero
+    } else {
+      setIsButtonDisabled(false); // Enable the start button when countdown is 0
+    }
+  }, [countdown]);
 
   const fetchQuizQuestions = async (storyText: string) => {
     setLoading(true);
@@ -119,10 +134,18 @@ export default function QuizPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center space-y-4"
           >
+            <h2 className="text-2xl font-bold text-purple-600">
+              Press start in {countdown} seconds
+            </h2>
+
             {currentQuestion > 0 && (
               <h2 className="text-3xl font-bold text-purple-600">Your Score: {score}/{questions.length}</h2>
             )}
-            <Button onClick={startQuiz} className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full text-xl">
+            <Button 
+              onClick={startQuiz} 
+              className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full text-xl"
+              disabled={isButtonDisabled} // Disable button until countdown reaches 0
+            >
               {currentQuestion > 0 ? 'Play Again' : 'Start Quiz'}
             </Button>
           </motion.div>
